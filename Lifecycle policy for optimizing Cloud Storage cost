@@ -1,0 +1,54 @@
+# Lifecycle policy for optimizing Cloud Storage cost
+# This policy manages active files, archives, and temporary logs automatically
+
+cat <<EOF > lifecycle.json
+{
+  "rule": [
+    {
+      "action": {
+        "type": "SetStorageClass",
+        "storageClass": "STANDARD"
+      },
+      "condition": {
+        "age": 30,
+        "matchesPrefix": ["projects/active/"]
+      }
+    },
+    {
+      "action": {
+        "type": "SetStorageClass",
+        "storageClass": "NEARLINE"
+      },
+      "condition": {
+        "age": 90,
+        "matchesPrefix": ["archive/"]
+      }
+    },
+    {
+      "action": {
+        "type": "SetStorageClass",
+        "storageClass": "COLDLINE"
+      },
+      "condition": {
+        "age": 180,
+        "matchesPrefix": ["archive/"]
+      }
+    },
+    {
+      "action": {
+        "type": "Delete"
+      },
+      "condition": {
+        "age": 7,
+        "matchesPrefix": ["processing/temp_logs/"]
+      }
+    }
+  ]
+}
+EOF
+
+# Apply lifecycle policy to the Cloud Storage bucket
+gsutil lifecycle set lifecycle.json gs://qwiklabs-gcp-02-b830e4841c3d-bucket
+
+# Verify applied lifecycle rules
+gsutil lifecycle get gs://qwiklabs-gcp-02-b830e4841c3d-bucket
